@@ -1,27 +1,78 @@
 var {class_name} = function() {{
 
     var findMax = function(nums) {{
-        var index = 0;
-        for (var i = 0; i < nums.length; i++) {{
-            index = nums[i] > nums[index] ? i : index;
+        if (nums[1] / (nums[1] + nums[0]) >= 0.58){{
+            return 1;
         }}
-        return index;
+        else{{
+            return 0;
+        }}
     }};
+
+    // partial sum helper function
+    var partialSum = function*(sequence){{
+      let s = 0;
+
+      for (const x of sequence){{
+          s += 1 - x;
+          yield s;
+      }}
+    }}
+
+    // pre-process win-sequence
+    this.preprocess = function(input) {{
+        let features = input.slice();
+        let winBeginIndex = 7;
+        let winEndIndex = 16;
+        let winSequence = features.slice(winBeginIndex, winEndIndex + 1);
+        let sumWin = Array.from(partialSum(winSequence));
+        for (let index = winBeginIndex; index <= winEndIndex; index ++){{
+            features[index] = sumWin[index - winBeginIndex];
+        }}
+        return features;
+    }}
 
     {method}
 
 }};
 
-if (typeof process !== 'undefined' && typeof process.argv !== 'undefined') {{
-    if (process.argv.length - 2 === {n_features}) {{
 
-        // Features:
-        var features = process.argv.slice(2);
 
-        // Prediction:
-        var clf = new {class_name}();
-        var prediction = clf.{method_name}(features);
-        console.log(prediction);
+let start = Date.now();
+let nround = 100;
+var clf = new DecisionTreeClassifier();
+let output = new Array(nround);
+const arrSum = arr => arr.reduce((a,b) => a + b, 0)
 
+for(let i=0; i<nround; i++){{
+
+    let input = Array(19).fill(0);
+    if(Math.random() > 0.5){{
+        input[0] = 1;
     }}
+    if(Math.random() > 0.5){{
+        input[1] = 1;
+    }}else{{
+        input[2] = 1;
+    }}
+    input[4] = Math.floor(100000 * Math.random());
+    input[5] = Math.floor(20000 * Math.random()) - 20000; // 上一局金币变化，可以是负的
+    input[6] = 10; // 连输局数
+    for(let i=7; i<17; i++){{
+        input[i] = Math.round(Math.random()); // 输赢序列
+        if ((input[i] == 1) && (i - 7) < input[6]){{
+            input[6] = i - 7;
+        }}
+    }}
+
+    input[18] = Math.floor(50 * Math.random());
+
+    input[17] = input[18] + Math.floor(50 * Math.random());
+    var features = clf.preprocess(input);
+    var prediction = clf.predict(features);
+    output[i] = prediction;
+    console.log("Input:", input, "\nfeatures:", features, "\npredict:", prediction);
+
 }}
+console.log("Number of 1's:", arrSum(output), "/", nround);
+console.log(Date.now() - start);
